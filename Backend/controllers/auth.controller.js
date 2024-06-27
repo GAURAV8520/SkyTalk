@@ -1,15 +1,22 @@
 import {User} from '../models/user.model.js'
+import bcrypt from 'bcryptjs'
+import {generateTokenAndSetCookie} from '../lib/utils/generateTokenAndSetCookie.js'
 
 
 export const signup =async (req,res)=>{
     try{
         const {fullName ,username,email,password}=req.body;
 
-        const emilRegex =/^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        
+    
 
-        if(!emilRegex.test(email)){
-            return res.status(400).json({error:"Invalid email format "})
+       // More robust email validation regex
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+        //console.log("Email regex test failed");
+        return res.status(400).json({ error: 'Invalid email format' });
         }
+
 
         const existingUser =await User.findOne({username});
         if(existingUser){
@@ -22,6 +29,9 @@ export const signup =async (req,res)=>{
         }
 
         //hash password 
+        if(password.length<8){
+            return res.status(400).json({error:"password must be atleast 8 charachter"})
+        }
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password,salt);
@@ -60,14 +70,57 @@ export const signup =async (req,res)=>{
 }
 
 export const login =async (req,res)=>{
-    res.json({
-       data:"you hit the login endpoint" 
-    });
+
+   try {
+     const {username,password}=req.body;
+ 
+     const user=await User.findOne({username});
+     const ispasswordCorrect= await bcrypt.compare(password,user?.password || "");
+     
+     if(!(user&& ispasswordCorrect)){
+         return res.status(400).json({error:"Invalid username or password"})
+     }
+ 
+     generateTokenAndSetCookie(user._id,res);
+ 
+     res.status(200).json({
+         _id:user._id,
+         username:user.username,
+         email:user.email,
+         followers:user.followers,
+         following:user.following,
+         profileimg:user.profileimg,
+         coverimg:user.coverimg,
+     })
+   } catch (error) {
+      console.log("Error in login controller",error.message);
+      res.status(500).json({error:"Internal server error"})
+   }
+
+    
+
+
 }
 
 
 export const logout =async (req,res)=>{
-    res.json({
-       data:"you hit the logout endpoint" 
-    });
+   try {
+    res.cookie("jwt","",{maxAge:0})
+    res.status(200).json({message:"logged out successfully"})
+   } catch (error) {
+    console.log("Error in logout controller",error.message);
+    res.status(500).json({error:"Internal server error"});
+   }
+}
+
+
+export const getMe = async (req,res)=>{
+    try {
+        const user = await User.findById(req.user._id).select("-password");
+        res.status(200).json(user);
+
+    } catch (error) {
+        console.log("Error in getMe controller ",error.message);
+        res.status(500).json({error:"Internal server error"})
+    }
 }
