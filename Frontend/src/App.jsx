@@ -17,8 +17,10 @@ function App() {
     queryKey:['authUser'],
     queryFn:async()=>{
       try {
-        const res = await fetch("/api/auth/me")
+        const res = await fetch("/api/auth/me");
         const data = await res.json();
+        
+        if(data.error) return null;
         if(!res.ok){
           throw new Error(data.error || "Something went wrong")
         }
@@ -48,7 +50,7 @@ function App() {
   return (
     <div className='flex max-w-6xl mx-auto'>
 
-      <Sidebar/>
+      {authUser && <Sidebar/>}
 
     <Routes>
       <Route path='/' element={authUser? <HomePage/> : <Navigate to='/login' />} />
@@ -59,7 +61,7 @@ function App() {
 
     </Routes>
 
-    <RightPanel/>
+    {authUser && <RightPanel/>}
 
     <Toaster/>
 
