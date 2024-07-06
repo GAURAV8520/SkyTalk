@@ -163,7 +163,7 @@ export const getAllPosts=async (req,res)=>{
         .populate({
             path:"comment.user",
             select:"-password",
-        })
+        });
 
         if(posts.length===0){
             return res.status(200).json([])
@@ -216,7 +216,7 @@ export const getFollowingPosts = async (req,res)=>{
         .sort({createdAt:-1})
         .populate({
             path:"user",
-            select:"-password"
+            select:"-password",
         })
         .populate({
             path:"comment.user",
