@@ -7,11 +7,10 @@ export const signup =async (req,res)=>{
     try{
         const {fullName ,username,email,password}=req.body;
 
-        
-    
-
        // More robust email validation regex
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
         if (!emailRegex.test(email)) {
         //console.log("Email regex test failed");
         return res.status(400).json({ error: 'Invalid email format' });
@@ -102,7 +101,6 @@ export const login =async (req,res)=>{
 
 }
 
-
 export const logout =async (req,res)=>{
    try {
     res.cookie("jwt","",{maxAge:0})
@@ -112,7 +110,6 @@ export const logout =async (req,res)=>{
     res.status(500).json({error:"Internal server error"});
    }
 }
-
 
 export const getMe = async (req,res)=>{
     try {
