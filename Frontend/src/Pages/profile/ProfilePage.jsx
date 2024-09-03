@@ -122,6 +122,8 @@ const ProfilePage = () => {
 		refetch();
 	},[username,refetch])
 
+
+
 	return (
 		<>
 			<div className='flex-[4_4_0]  border-r border-gray-700 min-h-screen '>
@@ -137,6 +139,7 @@ const ProfilePage = () => {
 								</Link>
 								<div className='flex flex-col'>
 									<p className='font-bold text-lg'>{user?.fullName}</p>
+									
 									<span className='text-sm text-slate-500'>{POSTS?.length} posts</span>
 								</div>
 							</div>

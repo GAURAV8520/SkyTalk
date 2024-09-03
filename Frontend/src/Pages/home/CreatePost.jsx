@@ -32,7 +32,7 @@ const CreatePost = () => {
 				});
 
 				const data = await res.json();
-				if(res.ok){
+				if(!res.ok){
 					throw new Error(data.error || "something went wrong ")
 				}
 
