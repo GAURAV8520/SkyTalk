@@ -13,7 +13,8 @@ export const getUserProfile = async(req,res)=>{
 
 
     try {
-        const user = await User.findOne({username}).select("-password");
+        const user = await User.findOne({username}).select("-password").populate("following")
+        .populate("followers");
         
         if(!user){
             return res.status(404).json({message:"User not found"})
