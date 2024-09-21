@@ -100,7 +100,7 @@ const ProfilePage = () => {
 
 
 	const memberSinceDate = formatMemberSinceDate(user?.createdAt)
-	const isMyProfile = authUser?._id===user?._id;
+	const isMyProfile = authUser._id===user?._id;
 
 
 	const amIfollowing =authUser?.following.includes(user?._id)
