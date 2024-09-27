@@ -1,64 +1,64 @@
 import { FaRegComment } from "react-icons/fa";
 import { BiRepost } from "react-icons/bi";
 import { FaRegHeart } from "react-icons/fa";
-import { FaRegBookmark } from "react-icons/fa6";
+import { FaRegBookmark, FaBookmark } from "react-icons/fa6";
 import { FaTrash } from "react-icons/fa";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {toast}  from 'react-hot-toast'
+import { toast } from 'react-hot-toast'
 import LoadingSpinner from './LoadingSpinner'
 import { formatPostDate } from "../../utils/date";
 
 const Post = ({ post }) => {
+	const [isBookmarked, setIsBookmarked] = useState(false);
 
-	
 	const [comment, setComment] = useState("");
 
-	const {data:authUser }=useQuery({
-		queryKey:["authUser"],
+	const { data: authUser } = useQuery({
+		queryKey: ["authUser"],
 
 	})
 
-	 const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-	const {mutate:deletePost , isPending:isDeleting} = useMutation({
-		mutationFn:async()=>{
+	const { mutate: deletePost, isPending: isDeleting } = useMutation({
+		mutationFn: async () => {
 			try {
-				const res= await fetch(`/api/posts/${post._id}`,{
-					method:"DELETE",
+				const res = await fetch(`/api/posts/${post._id}`, {
+					method: "DELETE",
 
 				})
 
 				const data = await res.json();
 
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "something went wrong");
 				}
 
 				return data;
 
-				
+
 			} catch (error) {
 				throw new Error(error)
 			}
 		},
-		onSuccess: ()=>{
+		onSuccess: () => {
 			toast.success("Post deleted successfully ");
-			queryClient.invalidateQueries({queryKey:["posts"]});
+			queryClient.invalidateQueries({ queryKey: ["posts"] });
 		}
 	})
 
-	const {mutate :likePost , isPending:isLiking} =useMutation({
-		mutationFn:async()=>{
+	const { mutate: likePost, isPending: isLiking } = useMutation({
+		mutationFn: async () => {
 			try {
-				const res = await fetch(`/api/posts/like/${post._id}`,{
-					method:"POST",
+				const res = await fetch(`/api/posts/like/${post._id}`, {
+					method: "POST",
 				})
 
 				const data = await res.json();
 
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "Something went wrong")
 				}
 				return data;
@@ -67,40 +67,40 @@ const Post = ({ post }) => {
 				throw new Error(error);
 			}
 		},
-		onSuccess:(updatedLikes)=>{
-			
-			
-			queryClient.setQueryData(["posts"],(oldData)=>{
-				return oldData.map(p=>{
-					if(p._id === post._id){
-						return {...p , likes:updatedLikes}
+		onSuccess: (updatedLikes) => {
+
+
+			queryClient.setQueryData(["posts"], (oldData) => {
+				return oldData.map(p => {
+					if (p._id === post._id) {
+						return { ...p, likes: updatedLikes }
 					}
 					return p;
 				})
 			})
 
 		},
-		onError:(error)=>{
+		onError: (error) => {
 			toast.error(error.message);
 		}
-	
+
 
 	});
 
-	const {mutate : commentPost , isPending :isCommenting}=useMutation({
-		mutationFn:async()=>{
+	const { mutate: commentPost, isPending: isCommenting } = useMutation({
+		mutationFn: async () => {
 			try {
-				const res = await fetch(`/api/posts/comment/${post._id}`,{
-					method:"POST",
-					headers:{
-						"content-Type":"application/json",
+				const res = await fetch(`/api/posts/comment/${post._id}`, {
+					method: "POST",
+					headers: {
+						"content-Type": "application/json",
 					},
-					body:JSON.stringify({text:comment}),
+					body: JSON.stringify({ text: comment }),
 
 				})
 
 				const data = await res.json();
-				if(!res.ok) {
+				if (!res.ok) {
 					throw new Error(data.error || "something went wrong");
 				}
 
@@ -109,13 +109,13 @@ const Post = ({ post }) => {
 				throw new Error(error);
 			}
 		},
-		onSuccess:()=>{
+		onSuccess: () => {
 			toast.success("Commented post successfully");
 			setComment("");
-			queryClient.invalidateQueries({queryKey:["posts"]})
+			queryClient.invalidateQueries({ queryKey: ["posts"] })
 
 		},
-		onError:(error)=>{
+		onError: (error) => {
 			toast.error(error.message)
 		}
 	})
@@ -125,7 +125,7 @@ const Post = ({ post }) => {
 	const postOwner = post.user;
 	const isLiked = post.likes.includes(authUser._id);
 
-	const isMyPost = authUser._id===post.user._id;
+	const isMyPost = authUser._id === post.user._id;
 
 	const formattedDate = formatPostDate(post.createdAt);
 
@@ -133,19 +133,39 @@ const Post = ({ post }) => {
 
 	const handleDeletePost = () => {
 		deletePost();
-		
+
 	};
 
 	const handlePostComment = (e) => {
 		e.preventDefault();
-		if(isCommenting) return ;
+		if (isCommenting) return;
 		commentPost();
 	};
 
 	const handleLikePost = () => {
-		if(isLiking) return ;
+		if (isLiking) return;
 		likePost();
 	};
+
+	// bookmark functionality 
+	useEffect(() => {
+		const bookmarks = JSON.parse(localStorage.getItem("bookmarks")) || [];
+		setIsBookmarked(bookmarks.includes(post._id));
+	  }, [post._id]);
+	
+	  const handleBookmarkToggle = () => {
+		const bookmarks = JSON.parse(localStorage.getItem("bookmarks")) || [];
+		if (isBookmarked) {
+		  const updatedBookmarks = bookmarks.filter((id) => id !== post._id);
+		  localStorage.setItem("bookmarks", JSON.stringify(updatedBookmarks));
+		  setIsBookmarked(false);
+		} else {
+		  bookmarks.push(post._id);
+		  localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+		  setIsBookmarked(true);
+		}
+	  };
+
 
 	return (
 		<>
@@ -167,9 +187,9 @@ const Post = ({ post }) => {
 						</span>
 						{isMyPost && (
 							<span className='flex justify-end flex-1'>
-									{!isDeleting && (<FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />)}								{
+								{!isDeleting && (<FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />)}								{
 									isDeleting && (
-										<LoadingSpinner/>
+										<LoadingSpinner />
 									)
 								}
 							</span>
@@ -206,7 +226,7 @@ const Post = ({ post }) => {
 												No comments yet 🤔 Be the first one 😉
 											</p>
 										)}
-										{post.comment.map((comment) => (								
+										{post.comment.map((comment) => (
 											<div key={comment._id} className='flex gap-2 items-start'>
 												<div className='avatar'>
 													<div className='w-8 rounded-full'>
@@ -239,7 +259,7 @@ const Post = ({ post }) => {
 										/>
 										<button className='btn btn-primary rounded-full btn-sm text-white px-4'>
 											{isCommenting ? (
-												<LoadingSpinner size="md"/>
+												<LoadingSpinner size="md" />
 											) : (
 												"Post"
 											)}
@@ -255,23 +275,28 @@ const Post = ({ post }) => {
 								<span className='text-sm text-slate-500 group-hover:text-green-500'>0</span>
 							</div>
 							<div className='flex gap-1 items-center group cursor-pointer' onClick={handleLikePost}>
-								{isLiking && <LoadingSpinner size="sm"/>}
-								{!isLiked && !isLiking &&  (
+								{isLiking && <LoadingSpinner size="sm" />}
+								{!isLiked && !isLiking && (
 									<FaRegHeart className='w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500' />
 								)}
 								{isLiked && !isLiking && <FaRegHeart className='w-4 h-4 cursor-pointer text-pink-500 ' />}
 
 								<span
-									className={`text-sm  group-hover:text-pink-500 ${
-										isLiked ? "text-pink-500" : "text-slate-500"
-									}`}
+									className={`text-sm  group-hover:text-pink-500 ${isLiked ? "text-pink-500" : "text-slate-500"
+										}`}
 								>
 									{post.likes.length}
 								</span>
 							</div>
 						</div>
 						<div className='flex w-1/3 justify-end gap-2 items-center'>
-							<FaRegBookmark className='w-4 h-4 text-slate-500 cursor-pointer' />
+							<div onClick={handleBookmarkToggle} className='cursor-pointer'>
+								{isBookmarked ? (
+									<FaBookmark className='w-4 h-4 text-slate-500 cursor-pointer' />
+								) : (
+									<FaRegBookmark className='w-4 h-4 text-slate-500 cursor-pointer' />
+								)}
+							</div>
 						</div>
 					</div>
 				</div>

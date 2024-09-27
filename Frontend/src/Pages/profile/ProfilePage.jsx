@@ -31,24 +31,24 @@ const ProfilePage = () => {
 	const profileimgRef = useRef(null);
 
 
-	const {username} = useParams();
+	const { username } = useParams();
 
 
 	const queryClient = useQueryClient();
 
-	const {data:authUser}=useQuery({queryKey:["authUser"]});
-	
-	const {follow , isPending} = useFollow();
+	const { data: authUser } = useQuery({ queryKey: ["authUser"] });
 
-	const {data:user, isLoading,refetch,isRefetching} = useQuery({
-		queryKey:["userProfile"],
-		queryFn:async()=>{
+	const { follow, isPending } = useFollow();
+
+	const { data: user, isLoading, refetch, isRefetching } = useQuery({
+		queryKey: ["userProfile"],
+		queryFn: async () => {
 			try {
 				const res = await fetch(`/api/users/profile/${username}`)
 
 				const data = await res.json();
 
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "something went wrong");
 				}
 
@@ -59,15 +59,15 @@ const ProfilePage = () => {
 		}
 	})
 
-	const {mutate:updateProfile,isPending:isUpdatingProfile}=useMutation({
-		mutationFn:async ()=>{
+	const { mutate: updateProfile, isPending: isUpdatingProfile } = useMutation({
+		mutationFn: async () => {
 			try {
-				const res = await fetch(`/api/users/update`,{
-					method:"POST",
-					headers:{
-						"Content-Type":"application/json",
+				const res = await fetch(`/api/users/update`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
 					},
-					body:JSON.stringify({
+					body: JSON.stringify({
 						coverimg,
 						profileimg
 					}),
@@ -75,7 +75,7 @@ const ProfilePage = () => {
 				})
 
 				const data = await res.json();
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "something went wrong");
 				}
 
@@ -86,25 +86,25 @@ const ProfilePage = () => {
 				throw new Error(error.message);
 			}
 		},
-		onSuccess:()=>{
+		onSuccess: () => {
 			toast.success("Profile updated successfully ");
 			Promise.all([
-				queryClient.invalidateQueries({queryKey:["authUser"]}),
-				queryClient.invalidateQueries({queryKey:["userProfile"]})
+				queryClient.invalidateQueries({ queryKey: ["authUser"] }),
+				queryClient.invalidateQueries({ queryKey: ["userProfile"] })
 			])
 		},
-		onError:(error)=>{
+		onError: (error) => {
 			toast.error(error.message)
 		}
 	});
 
 
 	const memberSinceDate = formatMemberSinceDate(user?.createdAt)
-	const isMyProfile = authUser?._id===user?._id;
+	const isMyProfile = authUser?._id === user?._id;
 
 
-	const amIfollowing =authUser?.following.includes(user?._id)
-	
+	const amIfollowing = authUser?.following.includes(user?._id)
+
 
 	const handleImgChange = (e, state) => {
 		const file = e.target.files[0];
@@ -118,9 +118,9 @@ const ProfilePage = () => {
 		}
 	};
 
-	useEffect(()=>{
+	useEffect(() => {
 		refetch();
-	},[username,refetch])
+	}, [username, refetch])
 
 
 
@@ -128,7 +128,7 @@ const ProfilePage = () => {
 		<>
 			<div className='flex-[4_4_0]  border-r border-gray-700 min-h-screen '>
 				{/* HEADER */}
-				{(isLoading ||  isRefetching) && <ProfileHeaderSkeleton />}
+				{(isLoading || isRefetching) && <ProfileHeaderSkeleton />}
 				{!isLoading && !isRefetching && !user && <p className='text-center text-lg mt-4'>User not found</p>}
 				<div className='flex flex-col'>
 					{!isLoading && !isRefetching && user && (
@@ -139,7 +139,7 @@ const ProfilePage = () => {
 								</Link>
 								<div className='flex flex-col'>
 									<p className='font-bold text-lg'>{user?.fullName}</p>
-									
+
 									<span className='text-sm text-slate-500'>{POSTS?.length} posts</span>
 								</div>
 							</div>
@@ -161,14 +161,14 @@ const ProfilePage = () => {
 
 								<input
 									type='file'
-                                    accept="image/*"
+									accept="image/*"
 									hidden
 									ref={coverimgRef}
 									onChange={(e) => handleImgChange(e, "coverimg")}
 								/>
 								<input
 									type='file'
-                                    accept="image/*"
+									accept="image/*"
 									hidden
 									ref={profileimgRef}
 									onChange={(e) => handleImgChange(e, "profileimg")}
@@ -189,7 +189,7 @@ const ProfilePage = () => {
 								</div>
 							</div>
 							<div className='flex justify-end px-4 mt-5'>
-								{isMyProfile && <EditProfileModal authUser={authUser}/>}
+								{isMyProfile && <EditProfileModal authUser={authUser} />}
 								{!isMyProfile && (
 									<button
 										className='btn btn-outline rounded-full btn-sm'
@@ -205,7 +205,7 @@ const ProfilePage = () => {
 										className='btn btn-primary rounded-full btn-sm text-white px-4 ml-2'
 										onClick={() => updateProfile()}
 									>
-										{isUpdatingProfile? "Updating..." :"Update"}
+										{isUpdatingProfile ? "Updating..." : "Update"}
 									</button>
 								)}
 							</div>
@@ -266,6 +266,16 @@ const ProfilePage = () => {
 									Likes
 									{feedType === "Likes" && (
 										<div className='absolute bottom-0 w-10  h-1 rounded-full bg-primary' />
+									)}
+								</div>
+								<div
+									className={`flex justify-center flex-1 p-3 ${feedType === "bookmarks" ? "bg-primary text-white" : "hover:bg-secondary"
+										} transition duration-300 relative cursor-pointer`}
+									onClick={() => setFeedType("bookmarks")}
+								>
+									Bookmarks
+									{feedType === "bookmarks" && (
+										<div className='absolute bottom-0 w-10 h-1 rounded-full bg-primary' />
 									)}
 								</div>
 							</div>

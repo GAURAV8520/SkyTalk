@@ -3,22 +3,23 @@ import PostSkeleton from "../skeletons/PostSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-const Posts = ( {feedType , username , userId} ) => {
+const Posts = ({ feedType, username, userId }) => {
+	const [bookmarkedPosts, setBookmarkedPosts] = useState([]);
 
-    
-	const getPostEndpoint =()=>{
-		switch(feedType){
+	const getPostEndpoint = () => {
+		switch (feedType) {
 			case "forYou":
 				return "/api/posts/all";
-			case "following" :
+			case "following":
 				return "/api/posts/following";
-			
+
 			case "posts":
 				return `/api/posts/user/${username}`;
 
-			case "likes" :
+			case "likes":
 				return `/api/posts/likes/${userId}`;
-			default: 
+
+			default:
 				return "/api/posts/all"
 		}
 	}
@@ -28,30 +29,35 @@ const Posts = ( {feedType , username , userId} ) => {
 
 	console.log(POST_ENDPOINT);
 
-	const { data:posts, isLoading, refetch ,isRefetching,}  = useQuery({
-		queryKey:["posts"],
-		queryFn: async () =>{
+	const { data: posts, isLoading, refetch, isRefetching, } = useQuery({
+		queryKey: ["posts"],
+		queryFn: async () => {
 			try {
 				const res = await fetch(POST_ENDPOINT);
 				const data = await res.json();
 
-				if(!res.ok){
+				if (!res.ok) {
 					throw new Error(data.error || "Something went wrong")
 				}
 
 				return data;
 			} catch (error) {
-				
+
 				throw new Error(error);
 			}
 		},
 	})
 
-	useEffect(()=>{
-		refetch();
-	},[feedType,refetch,username])
+	useEffect(() => {
+		if (feedType === "bookmarks") {
+			// Fetch bookmarks from localStorage whenever feedType changes to bookmarks
+			const storedBookmarks = localStorage.getItem("bookmarks");
+			setBookmarkedPosts(storedBookmarks ? JSON.parse(storedBookmarks) : []);
+		} else {
+			refetch();
+		}
+	}, [feedType, refetch, username]);
 
-	
 
 
 
@@ -59,7 +65,7 @@ const Posts = ( {feedType , username , userId} ) => {
 
 	return (
 		<>
-			{( isLoading || isRefetching) && (
+			{(isLoading || isRefetching) && (
 				<div className='flex flex-col justify-center'>
 					<PostSkeleton />
 					<PostSkeleton />
@@ -67,11 +73,29 @@ const Posts = ( {feedType , username , userId} ) => {
 				</div>
 			)}
 
-			
-			{!isLoading && !isRefetching  &&  posts?.length === 0 && (<p className='text-center my-4'>No posts in this tab. Switch 👻</p>)}
-			{!isLoading && !isRefetching && posts && (
+
+
+			{!isLoading && !isRefetching && posts?.length === 0 && (
+				<p className='text-center my-4'>
+					No posts in this tab. Switch 👻
+				</p>
+			)}
+			{!isLoading && !isRefetching && posts && feedType !== "bookmarks" && (
 				<div>
 					{posts.map((post) => (
+						<Post key={post._id} post={post} />
+					))}
+				</div>
+			)}
+
+			{!isLoading && feedType === "bookmarks" && bookmarkedPosts.length === 0 && (
+				<p className='text-center my-4'>
+					No bookmarks yet. Bookmark some posts to see them here. 📚
+				</p>
+			)}
+			{!isLoading && feedType === "bookmarks" && bookmarkedPosts.length > 0 && (
+				<div>
+					{bookmarkedPosts.map((post) => (
 						<Post key={post._id} post={post} />
 					))}
 				</div>
